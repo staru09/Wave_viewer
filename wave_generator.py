@@ -5,7 +5,7 @@ import sys
 
 def generate_waveform(audio_path, output_image_path):
     # Read the wave file
-    spf = wave.open('C:\Users\91745\OneDrive\Desktop\Wave_viewer\file_example_MP3_700KB.mp3', 'r')
+    spf = wave.open('C:\Users\91745\OneDrive\Desktop\Wave_viewer\file_example_WAV_1MG.wav', 'r')
 
     # Extract Raw Audio from Wav File
     signal = spf.readframes(-1)
