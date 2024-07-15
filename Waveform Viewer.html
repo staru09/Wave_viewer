@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
-    <script src="https://unpkg.com/wavesurfer.js"></script>
     <title>Waveform Viewer</title>
     <style type="text/tailwindcss">
         @layer base {
@@ -59,7 +58,7 @@
         <h1 class="text-3xl font-bold my-8">Audio Waveform Viewer</h1>
         <div class="w-full max-w-screen-lg bg-card shadow-lg rounded-lg overflow-hidden">
             <div class="bg-primary p-4">
-                <div id="waveform" class="w-full h-48 bg-gray-200"></div>
+                <img id="waveform" src="http://127.0.0.1:5000/waveform" class="w-full h-48 bg-gray-200"/>
             </div>
             <div class="p-4">
                 <audio id="audio-player" controls class="w-full bg-primary-foreground text-primary">
@@ -79,56 +78,5 @@
             </div>
         </div>
     </div>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            var wavesurfer = WaveSurfer.create({
-                container: '#waveform',
-                waveColor: 'violet',
-                progressColor: 'purple',
-                height: 200
-            });
-
-            wavesurfer.load('https://openui.fly.dev/openui/funky.mp3');
-
-            document.getElementById('audio-player').addEventListener('play', function() {
-                wavesurfer.play();
-            });
-
-            document.getElementById('audio-player').addEventListener('pause', function() {
-                wavesurfer.pause();
-            });
-
-            document.getElementById('zoom-in').addEventListener('click', function() {
-                wavesurfer.zoom(wavesurfer.params.minPxPerSec * 1.2);
-            });
-
-            document.getElementById('zoom-out').addEventListener('click', function() {
-                wavesurfer.zoom(wavesurfer.params.minPxPerSec / 1.2);
-            });
-
-            document.getElementById('zoom-vertical').addEventListener('click', function() {
-                var newHeight = wavesurfer.params.height * 1.2;
-                wavesurfer.params.height = newHeight;
-                wavesurfer.drawer.setHeight(newHeight);
-                wavesurfer.drawBuffer();
-            });
-
-            document.getElementById('upload-btn').addEventListener('click', function() {
-                document.getElementById('file-upload').click();
-            });
-
-            document.getElementById('file-upload').addEventListener('change', function(e) {
-                var file = e.target.files[0];
-                if (file) {
-                    var url = URL.createObjectURL(file);
-                    wavesurfer.load(url);
-                    var audioSource = document.getElementById('audio-source');
-                    audioSource.src = url;
-                    var audioPlayer = document.getElementById('audio-player');
-                    audioPlayer.load();
-                }
-            });
-        });
-    </script>
 </body>
 </html>
