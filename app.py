@@ -5,6 +5,8 @@ import numpy as np
 import wave
 from pydub import AudioSegment
 from werkzeug.utils import secure_filename
+import librosa
+import librosa.display
 
 app = Flask(__name__)
 UPLOAD_FOLDER = 'uploads'
@@ -19,7 +21,7 @@ def index():
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
-            <title>Audio Waveform Viewer</title>
+            <title>Audio Waveform and Spectrogram Viewer</title>
             <style type="text/tailwindcss">
                 @layer base {
                     :root {
@@ -70,10 +72,13 @@ def index():
         </head>
         <body>
             <div class="flex flex-col items-center justify-center min-h-screen bg-background text-primary-foreground">
-                <h1 class="text-3xl font-bold my-8">Audio Waveform Viewer</h1>
+                <h1 class="text-3xl font-bold my-8">Audio Waveform and Spectrogram Viewer</h1>
                 <div class="w-full max-w-screen-lg bg-card shadow-lg rounded-lg overflow-hidden">
                     <div class="bg-primary p-4">
                         <img id="waveform" src="/waveform" class="w-full h-48 bg-gray-200"/>
+                    </div>
+                    <div class="bg-primary p-4">
+                        <img id="spectrogram" src="/spectrogram" class="w-full h-48 bg-gray-200"/>
                     </div>
                     <div class="p-4">
                         <audio id="audio-player" controls class="w-full bg-primary-foreground text-primary">
@@ -112,6 +117,7 @@ def index():
                     }).then(response => response.json()).then(data => {
                         document.getElementById('audio-source').src = data.audio_url;
                         document.getElementById('waveform').src = data.waveform_url;
+                        document.getElementById('spectrogram').src = data.spectrogram_url;
                         document.getElementById('audio-player').load();
                     });
                 });
@@ -146,6 +152,10 @@ def index():
 def serve_waveform():
     return send_file('output_waveform.png', mimetype='image/png')
 
+@app.route('/spectrogram')
+def serve_spectrogram():
+    return send_file('output_spectrogram.png', mimetype='image/png')
+
 @app.route('/upload', methods=['POST'])
 def upload_file():
     if 'file' not in request.files:
@@ -163,36 +173,48 @@ def upload_file():
         # Convert to WAV format if necessary
         wav_path = convert_to_wav(filepath)
         generate_waveform(wav_path, 'output_waveform.png')
+        generate_spectrogram(wav_path, 'output_spectrogram.png')
         
         audio_url = f'/uploads/{filename}'
         waveform_url = '/waveform'
+        spectrogram_url = '/spectrogram'
         
-        return {'audio_url': audio_url, 'waveform_url': waveform_url}
+        return {'audio_url': audio_url, 'waveform_url': waveform_url, 'spectrogram_url': spectrogram_url}
 
 def convert_to_wav(audio_path):
     # Extract the file extension
     file_ext = os.path.splitext(audio_path)[1].lower()
-    wav_path = os.path.splitext(audio_path)[0] + '.wav'
+    wav_path = audio_path
 
     if file_ext != '.wav':
+        # Convert the file to WAV using pydub
         audio = AudioSegment.from_file(audio_path)
+        wav_path = audio_path.replace(file_ext, '.wav')
         audio.export(wav_path, format='wav')
-    else:
-        wav_path = audio_path
-    
+
     return wav_path
 
 def generate_waveform(audio_path, output_image_path):
     spf = wave.open(audio_path, 'r')
     signal = spf.readframes(-1)
     signal = np.frombuffer(signal, dtype=np.int16)
-    fs = spf.getframerate()
-    Time = np.linspace(0, len(signal) / fs, num=len(signal))
+
     plt.figure(figsize=(12, 6))
-    plt.plot(Time, signal)
+    plt.plot(signal)
     plt.title('Waveform')
     plt.xlabel('Time (s)')
     plt.ylabel('Amplitude')
+    plt.savefig(output_image_path, dpi=100)
+    plt.close()
+
+def generate_spectrogram(audio_path, output_image_path):
+    y, sr = librosa.load(audio_path)
+    plt.figure(figsize=(12, 6))
+    S = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=128, fmax=8000)
+    S_dB = librosa.power_to_db(S, ref=np.max)
+    librosa.display.specshow(S_dB, sr=sr, x_axis='time', y_axis='mel', fmax=8000)
+    plt.colorbar(format='%+2.0f dB')
+    plt.title('Mel-frequency spectrogram')
     plt.savefig(output_image_path, dpi=100)
     plt.close()
 
