@@ -1,10 +1,6 @@
-import os
-import matplotlib.pyplot as plt
-import numpy as np
-import wave
-from pydub import AudioSegment
 import librosa
 import librosa.display
+import matplotlib.pyplot as plt
 
 def generate_spectrogram(audio_path, output_image_path):
     y, sr = librosa.load(audio_path)
@@ -16,5 +12,3 @@ def generate_spectrogram(audio_path, output_image_path):
     plt.title('Mel-frequency spectrogram')
     plt.savefig(output_image_path, dpi=100)
     plt.close()
-
-generate_spectrogram('file_example_WAV_1MG.wav','output_spectogram.png')
